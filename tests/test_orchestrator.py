@@ -129,7 +129,6 @@ def describe_register_auction():
             sell_row_2 = __sell_row(item=item_name_2, close_time=close_time_2)
             o.register_auction(sell_row_1)
             o.register_auction(sell_row_2)
-
             assert (
                 int(close_time_1),
                 [item_name_1],
@@ -175,3 +174,72 @@ def describe_register_bid():
 
             assert return_value[0] == "Auction does not exist (at all)"
             assert return_value[1] == None
+
+
+def describe_handle_ending_listings():
+    def describe_when_no_listings():
+        def returns_an_empty_list():
+            o = Orchestrator()
+            return_value = o.handle_ending_listings(11)
+            assert return_value == []
+
+    def describe_when_no_listings_ending_on_the_timestamp():
+        def returns_an_empty_list():
+            o = Orchestrator()
+            sell_row = __sell_row(item=item_name_1)
+            o.register_auction(sell_row)
+
+            return_value = o.handle_ending_listings(11)
+            assert return_value == []
+
+    def describe_when_a_single_listing_ending_on_the_timestamp():
+        def returns_output_for_the_single_ending_listing():
+            o = Orchestrator()
+            sell_row = __sell_row(item="tv", close_time=20)
+            o.register_auction(sell_row)
+
+            return_value = o.handle_ending_listings(20)
+            assert return_value == [
+                {
+                    "close_time": 20,
+                    "highest_bid": "$0.00",
+                    "item": "tv",
+                    "lowest_bid": "$0.00",
+                    "price_paid": "$0.00",
+                    "status": "UNSOLD",
+                    "total_valid_bid_count": 0,
+                    "winning_bid_user_id": None,
+                }
+            ]
+
+    def describe_when_multiple_listings_ending_on_the_timestamp():
+        def returns_output_for_all_ending_listings():
+            o = Orchestrator()
+            sell_row_1 = __sell_row(item="tv", close_time=20)
+            sell_row_2 = __sell_row(item="shoes", close_time=20)
+            o.register_auction(sell_row_1)
+            o.register_auction(sell_row_2)
+            return_value = o.handle_ending_listings(20)
+
+            assert return_value == [
+                {
+                    "close_time": 20,
+                    "highest_bid": "$0.00",
+                    "item": "tv",
+                    "lowest_bid": "$0.00",
+                    "price_paid": "$0.00",
+                    "status": "UNSOLD",
+                    "total_valid_bid_count": 0,
+                    "winning_bid_user_id": None,
+                },
+                {
+                    "close_time": 20,
+                    "highest_bid": "$0.00",
+                    "item": "shoes",
+                    "lowest_bid": "$0.00",
+                    "price_paid": "$0.00",
+                    "status": "UNSOLD",
+                    "total_valid_bid_count": 0,
+                    "winning_bid_user_id": None,
+                },
+            ]

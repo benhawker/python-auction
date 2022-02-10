@@ -4,9 +4,9 @@ from parser import Parser
 
 
 def describe_parse():
-    def describe_with_the_default_input():
+    def describe_with_the_basic_input():
         def returns_the_correct_output(capfd):
-            p = Parser()
+            p = Parser(file_path="tests/inputs/basic_input.txt")
             p.parse()
 
             out, err = capfd.readouterr()

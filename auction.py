@@ -64,22 +64,21 @@ class Auction:
         return "", bid
 
     def end(self):
-        self.sort_bids()
+        self._sort_bids()
 
-        highest_bid = self.get_highest_bid()
-        status = self.calculate_status(highest_bid)
+        highest_bid = self._get_highest_bid()
+        status = self._calculate_status(highest_bid)
         self.status = status
-        self.price_paid = self.calculate_price_paid(status)
+        self.price_paid = self._calculate_price_paid(status)
         self.total_valid_bid_count = len(self.bids)
         self.highest_bid = highest_bid
-        self.lowest_bid = self.get_lowest_bid()
-        self.winning_bid_user_id = self.get_winning_bid_user_id(status, highest_bid)
+        self.lowest_bid = self._get_lowest_bid()
+        self.winning_bid_user_id = self._get_winning_bid_user_id(status, highest_bid)
 
-        return self.output()
+        return self._output()
 
-    def calculate_price_paid(self, status):
+    def _calculate_price_paid(self, status):
         if status == self.SOLD_STATUS:
-            # If there is only a single VALID bid they will pay the reserve price of the auction.
             if len(self.bids) == 1:
                 # NB: This assumes there is ALWAYS a reservePrice
                 # An item with no reserve presents issues given we do not consider a 'starting_price' (it is implicitly 0)
@@ -89,7 +88,7 @@ class Auction:
 
             # The requirements state:
             #  - At the end of the auction the winner will pay the price of the second highest bidder.
-            #  - If there is only a single valid bid they will pay the reserve price of the auction.
+            #  - If there is only a single 'valid' bid they will pay the reserve price of the auction.
             #  - If two bids are received for the same amount then the earliest bid wins the item.
 
             # In reality the situation is more complex:
@@ -99,40 +98,43 @@ class Auction:
             # - 1 exceeding reserve, 1 below reserve => highest bidder will pay reserve price
             # - Both exceeding or equal to reserve => highester bidder will pay second highest bid
             # - Both below reserve => return 0.00 - UNSOLD item. (NB: this block is not executed in this case)
-            second_highest_bid_amount = self.bids[-2].amount
 
-            # We have already checked that highestBid >= listing.reservePrice in `calculateStatus`
+            second_highest_bid_amount = self.bids[-2].amount
             if second_highest_bid_amount >= self.reserve_price:
                 return second_highest_bid_amount
 
+            # If the second highest bid is below the reserve price then the highest bidder pays the reserve.
+            # We have already confirmed that highestBid >= listing.reservePrice in `calculateStatus`
+            return self.bids[-1].amount
+
         return 0.00
 
-    def calculate_status(self, highest_bid):
-        if highest_bid.amount > self.reserve_price:
-            return self.SOLD_STATUS
-
-        return self.UNSOLD_STATUS
-
-    def output(self):
+    def _output(self):
         out = {key: self.__dict__[key] for key in self.KEYS_TO_OUTPUT}
         out["highest_bid"] = "${:.2f}".format(self.highest_bid.amount)
         out["lowest_bid"] = "${:.2f}".format(self.lowest_bid.amount)
         out["price_paid"] = "${:.2f}".format(self.price_paid)
         return out
 
-    def get_lowest_bid(self):
-        return self.bids[0] if len(self.bids) > 0 else 0
+    def _calculate_status(self, highest_bid):
+        if highest_bid.amount >= self.reserve_price:
+            return self.SOLD_STATUS
 
-    def get_highest_bid(self):
-        return self.bids[-1] if len(self.bids) > 0 else 0
+        return self.UNSOLD_STATUS
 
-    def get_winning_bid_user_id(self, status, highest_bid):
+    def _get_lowest_bid(self):
+        return self.bids[0] if len(self.bids) > 0 else Bid.null_bid()
+
+    def _get_highest_bid(self):
+        return self.bids[-1] if len(self.bids) > 0 else Bid.null_bid()
+
+    def _get_winning_bid_user_id(self, status, highest_bid):
         if status == self.SOLD_STATUS:
             return highest_bid.user_id
         else:
             return None
 
-    def sort_bids(self):
+    def _sort_bids(self):
         # Sorts the bids slice by bids in ascending order (i.e. highest bids last)
         # Secondary sort by timestamp in descending order (i.e. earliest bid last)
         #

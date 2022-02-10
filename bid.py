@@ -8,3 +8,11 @@ class Bid:
         self.user_id = user_id
         self.item = item
         self.amount = amount
+
+    def null_bid():
+        return Bid(
+            timestamp=0,
+            user_id=0,
+            item="0",
+            amount=0,
+        )

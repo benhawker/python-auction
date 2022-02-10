@@ -1,8 +1,5 @@
 
 Run the program
-```
-python3 parser.py
-```
 
 ```
 python3 -i parser.py 
